@@ -1,0 +1,107 @@
+import { useState } from 'react';
+import { FaBriefcase, FaSearch } from 'react-icons/fa';
+
+const App => () {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [keyword, setKeyword] = useState('');
+
+  const fetchJobs = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/scrape', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ keyword: keyword || 'software engineer' }),
+      });
+      const data = await response.json();
+      setJobs(data.jobs);
+    } catch (error) {
+      console.log('Error:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center mb-4">
+            <FaBriefcase className="text-blue-600 text-4xl mr-3" />
+            <h1 className="text-4xl font-bold text-gray-800">Job Scraper</h1>
+          </div>
+          <p className="text-gray-600">Find your next opportunity from Wellfound</p>
+        </div>
+
+        {/* Search Section */}
+        <div className="max-w-2xl mx-auto mb-12">
+          <div className="flex items-center bg-white rounded-lg shadow-md p-2">
+            <FaSearch className="text-gray-400 ml-3" />
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Enter job keyword (e.g., Software Engineer, Designer)"
+              className="flex-1 p-3 outline-none"
+            />
+            <button
+              onClick={fetchJobs}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md transition-colors duration-200 ml-2"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Scraping...
+                </div>
+              ) : (
+                'Search Jobs'
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Jobs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {jobs.map((job) => (
+            <div key={job.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800">{job.title}</h2>
+                  <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">
+                    New
+                  </span>
+                </div>
+                <div className="mb-4">
+                  <p className="text-gray-700 font-medium">{job.company}</p>
+                  <p className="text-gray-500 text-sm flex items-center mt-1">
+                    📍 {job.location}
+                  </p>
+                </div>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{job.description}</p>
+                <div className="flex justify-between items-center">
+                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    View Details →
+                  </button>
+                  <span className="text-gray-500 text-sm">Posted Today</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {jobs.length === 0 && !loading && (
+          <div className="text-center text-gray-500 mt-12">
+            <p>No jobs found. Try searching for a different keyword.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;
