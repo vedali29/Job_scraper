@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 from scraper import WellfoundScraper
+from config import settings
 import logging
 import traceback
 
@@ -14,13 +15,15 @@ logging.basicConfig(
 
 app = FastAPI(title="Wellfound Job Scraper")
 
+# Updated CORS middleware with environment-based origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class JobSearchRequest(BaseModel):
     keywords: List[str]

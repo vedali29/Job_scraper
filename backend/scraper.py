@@ -8,12 +8,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 from retrying import retry
+from config import settings
 
 class WellfoundScraper:
     def __init__(self):
         self.driver = None
         self.BASE_URL = "https://wellfound.com"
-        self.SCROLL_PAUSE_TIME = 2  # seconds
+        self.SCROLL_PAUSE_TIME = settings.SCROLL_PAUSE_TIME
+        self.MAX_RETRIES = settings.MAX_RETRIES
+
 
     def create_driver(self):
         """Create and configure Chrome WebDriver"""
