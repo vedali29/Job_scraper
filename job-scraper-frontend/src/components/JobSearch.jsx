@@ -9,6 +9,7 @@ function JobSearch() {
     const [jobs, setJobs] = useState([]);
     const [filteredJobs, setFilteredJobs] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [filters, setFilters] = useState({
         type: 'all',
@@ -16,31 +17,49 @@ function JobSearch() {
         expLevel: 'all'
     });
 
-    useEffect(() => {
-        const initialFetch = async () => {
-            setLoading(true);
-            try {
-                const response = await fetch('http://localhost:8000/api/jobs');
-                const data = await response.json();
-                setJobs(data.jobs);
-                setFilteredJobs(data.jobs);
-            } catch (error) {
-                console.error('Error fetching jobs:', error);
+    const initialFetch = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('https://job-scraper-n48t.onrender.com/scrape-jobs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    keywords: ['developer'],
+                    max_jobs_per_keyword: 10
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            setLoading(false);
-        };
-    
-        initialFetch();
-    }, []);
-    
+            
+            const data = await response.json();
+            setJobs(data.jobs);
+            setFilteredJobs(data.jobs);
+        } catch (error) {
+            console.error('Error fetching jobs:', error);
+            setError('Failed to load initial jobs. Please try again later.');
+        }
+        setLoading(false);
+    };
 
-    // Fetch jobs from API
     const fetchJobs = async () => {
         setLoading(true);
+        setError(null);
         try {
-            const response = await fetch(
-                `http://localhost:8000/api/jobs?search=${searchQuery}`
-            );
+            const response = await fetch('https://job-scraper-n48t.onrender.com/scrape-jobs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    keywords: [searchQuery || 'developer'],
+                    max_jobs_per_keyword: 10
+                })
+            });
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -51,7 +70,7 @@ function JobSearch() {
             applyFilters(data.jobs);
         } catch (error) {
             console.error('Failed to fetch jobs:', error);
-            // Show error message to user
+            setError('Failed to fetch jobs. Please try again.');
             setJobs([]);
             setFilteredJobs([]);
         } finally {
@@ -59,7 +78,6 @@ function JobSearch() {
         }
     };
 
-    // Filter jobs based on selected filters
     const applyFilters = (jobsToFilter) => {
         let result = [...jobsToFilter];
 
@@ -78,29 +96,33 @@ function JobSearch() {
         setFilteredJobs(result);
     };
 
-    // Handle search submit
     const handleSearch = (e) => {
         e.preventDefault();
         fetchJobs();
     };
 
-    // Apply filters whenever filters change
+    useEffect(() => {
+        initialFetch();
+    }, []);
+
     useEffect(() => {
         applyFilters(jobs);
     }, [filters]);
 
-    // Initial fetch
     useEffect(() => {
-        fetchJobs();
+        if (category) {
+            fetchJobs();
+        }
     }, [category]);
-
-    useEffect(() => {
-        console.log("filtered Jobs:", filteredJobs);
-    }, [filteredJobs]);
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Search Bar */}
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {error}
+                </div>
+            )}
+            
             <div className="mb-6">
                 <form onSubmit={handleSearch} className="flex gap-2">
                     <div className="flex-1 relative">
@@ -118,8 +140,9 @@ function JobSearch() {
                     <button
                         type="submit"
                         className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        disabled={loading}
                     >
-                        Search
+                        {loading ? 'Searching...' : 'Search'}
                     </button>
                 </form>
             </div>
